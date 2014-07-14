@@ -1,0 +1,61 @@
+<apex:component >
+    <apex:attribute name="style" default="classic" type="string" description="the name of the style [classic, processing]"/>
+    <style>
+        <apex:outputPanel layout="none" rendered="{!style == 'processing'}">
+            #overlay {
+                visibility:hidden;
+                position:fixed;
+                _position:absolute; 
+                height:100%;
+                width:100%; 
+                top:0;
+                bottom:0;
+                left:0; 
+                background:#fff;
+                opacity:0.45;
+                -moz-opacity:0.45;
+                filter:alpha(opacity=45);                
+                z-index:1000;   
+            }
+            #overlayInner{
+                display:block;    
+                position:fixed;
+                _position:absolute; /* hack for internet explorer 6*/
+                height:50px;
+                width:50px;
+                background:#FFFFFF;       
+                background-image:url("{!URLFOR($Resource.Loading_Img,'img/loading.gif')}");
+                
+                background-repeat:no-repeat;
+                background-position:center center;
+                z-index:1001; 
+            }            
+        </apex:outputPanel>        
+    </style>
+    <script type="text/javascript">
+        //---------------------------------
+        // Function to display overlay div
+        //---------------------------------
+        function showOverlay() {                       
+            var o = document.getElementById('overlay');
+            o.style.visibility = 'visible';
+            
+            //create inner div
+            var i = document.createElement('div');
+            i.id  = 'overlayInner';
+            i.style.position = "fixed";            
+            i.style.top = (o.clientHeight)/2 + 'px';
+            i.style.left = (o.clientWidth)/2 + 'px';
+            
+            //append inner div inside overlay div                
+            o.appendChild(i);             
+        }
+        //---------------------------------
+        // Function to hide overlay div
+        //---------------------------------
+        function hideOverlay() {
+            var o = document.getElementById('overlay');
+            o.style.visibility = 'hidden';                                               
+        }        
+    </script>
+</apex:component>

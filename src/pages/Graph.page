@@ -1,0 +1,112 @@
+<apex:page standardController="Account" sidebar="false" >
+<!-- Script to call Sforce -->
+<script src="/soap/ajax/19.0/connection.js" type="text/javascript" />
+<!-- Sample script showing the creation of the Region specific chart with a sample date.
+
+
+-->
+<script type="text/javascript" src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization',
+       'version':'1','packages':['timeline']}]}"></script>
+        <script type='text/javascript' src='https://www.google.com/jsapi'></script>
+    <script type='text/javascript'>
+     google.load('visualization', '1', {'packages': ['geochart','gauge']});
+     google.setOnLoadCallback(drawRegionsMap);
+
+      function drawRegionsMap() {
+        var data = google.visualization.arrayToDataTable([
+          ['Country', 'Sales'],
+          ['Germany', 200],
+          ['United States', 300],
+          ['Brazil', 400],
+          ['Canada', 500],
+          ['France', 600],
+          ['RU', 700]
+        ]);
+
+        var options = {};
+
+        var chart = new google.visualization.GeoChart(document.getElementById('chart_div'));
+        chart.draw(data, options);
+    };
+    </script>
+    
+ 
+ <!-- Script to create the Timeline chart-->
+ 
+<script type="text/javascript">
+google.setOnLoadCallback(drawChart);
+
+function drawChart() {
+  var container = document.getElementById('example1');
+
+  var chart = new google.visualization.Timeline(container);
+
+  var dataTable = new google.visualization.DataTable();
+
+  dataTable.addColumn({ type: 'string', id: 'Subject' });
+  dataTable.addColumn({ type: 'datetime', id: 'Start' });
+  dataTable.addColumn({ type: 'datetime', id: 'End' });
+
+   sforce.connection.sessionId = '{!$Api.Session_ID}';
+        // Query data using SOQL.
+        var result = sforce.connection.query("Select StartDateTime, EndDateTime, Subject from Event " +
+                      "where Whatid= '{!account.id}' " +
+                      "order by Subject desc");
+                      
+                      console.log(result );
+        // Iterate over the result
+        var it = new sforce.QueryResultIterator(result);
+        var dt,res,yr,mon,day,hr,min,sec;
+        var dt,res,yr1,mon1,day1,hr1,min1,sec1;
+        while(it.hasNext()) {
+            var record = it.next();
+            // Add the data to the table
+            dt =  record.StartDateTime;
+            res = dt.split("-")
+            yr = res[0];
+            mon = res[1];
+            dt = res[2];
+            res = dt.split("T");
+            day = res[0];
+            dt = res[1];
+            res = dt.split(":");
+            hr = res[0];
+            min = res[1];
+            dt = res[2];
+            res = dt.split(".");
+            sec = res[0];
+            dt =  record.EndDateTime;
+            res = dt.split("-")
+            yr1 = res[0];
+            mon1 = res[1];
+            dt = res[2];
+            res = dt.split("T");
+            day1 = res[0];
+            dt = res[1];
+            res = dt.split(":");
+            hr1 = res[0];
+            min1 = res[1];
+            dt = res[2];
+            res = dt.split(".");
+            sec1 = res[0];
+            
+            dataTable.addRow([record.Subject , new Date(yr,mon,day,hr,min,sec), new Date(yr1,mon1,day1,hr1,min1,sec1)]);
+        }
+  chart.draw(dataTable);
+}
+</script>
+
+<apex:SectionHeader title="Google Charts"/>
+ <apex:pageBlock >
+ <apex:pageblocksection title="TimeLine">
+<div id="example1" style="width: 1300px; height: 300px;"></div>
+</apex:pageblocksection>
+<apex:pageblocksection title="Sales based on Region">
+ <div id="chart_div" style="width: 900px; height: 500px; align:center;"></div>
+ </apex:pageblocksection>
+ </apex:pageBlock>
+
+ 
+ 
+
+</apex:page>

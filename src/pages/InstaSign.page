@@ -1,0 +1,144 @@
+<apex:page controller="InstaSign" docType="html-5.0" standardStylesheets="false" showHeader="false" title="InstaSign" cache="true">
+<html>
+    <head>
+        <title>InstaSign</title>
+        <apex:styleSheet value="{!URLFOR($Resource.jquery, 'jquery/jquery.mobile-1.1.1.min.css')}" />
+        <apex:includeScript value="{!URLFOR($Resource.jquery, 'jquery/jquery-1.6.2.min.js')}"/>
+        <apex:includeScript value="{!URLFOR($Resource.jquery, 'jquery/jquery.mobile-1.1.1.min.js')}"/>
+        <apex:includeScript value="{!URLFOR($Resource.jSignature)}"/> 
+
+        <meta name="viewport" content="initial-scale=1, maximum-scale=1" />
+      
+        <script type="text/javascript">
+            var feedItemId='';
+            var $j = jQuery.noConflict();
+            $j.ajaxSetup({
+              timeout: '120000'
+            }); 
+             
+            function showLoadingModal() {
+                $j.mobile.loadingMessageTextVisible = true;
+                $j.mobile.showPageLoadingMsg("a", "Loading....", false);
+            }
+            
+            function navigateToChatter(){
+                if(feedItemId!='')
+                    sforce.one.navigateToFeedItemDetail(feedItemId);
+                else
+                    sforce.one.navigateToSObject('{!$CurrentPage.parameters.Id}');   
+            }
+            
+            function navigateBack(){
+                //sforce.one.back(true);
+                sforce.one.navigateToSObject('{!$CurrentPage.parameters.Id}'); 
+            }
+            
+            function accepted(){
+                if($j('#actionBtn').html()!='OK'){
+                    $j('#actionBtn').html('OK');
+                }
+            }
+            
+            $j(window).ready(function() {
+                $j.mobile.hidePageLoadingMsg();
+               
+            });
+            
+            $j(window).resize(function() { 
+                $j(".ui-header").width($j(window).width());
+                $j(".ui-footer").width($j(window).width());
+            });  
+            
+            $j('#currentPage').live('pageinit',function(event){
+        
+            //Initialize the jSignature JQuery plugin
+            $j("#signature").jSignature({color:"black", height:150, width:350});
+
+            $j('#signature').css({'display' : 'block'});
+            $j('#actionBtn').html('OK');
+            $j('#resultmsg').hide();
+            });
+        
+            function signatureAction(){
+                $j.mobile.showPageLoadingMsg("a", "Working....", false);
+                var datapair = $j("#signature").jSignature("getData", "svgbase64");
+                if(datapair[1].length>312 && $j("#checkbox-mini-0").prop("checked")){
+                    Visualforce.remoting.Manager.invokeAction(
+                        '{!$RemoteAction.InstaSign.completeSignature}',
+                        datapair[1], 
+                        '{!$CurrentPage.parameters.Id}', 
+                        function(res,event){
+                          $j.mobile.hidePageLoadingMsg();
+                          $j('#button').hide();
+                          $j('#resultmsg').show();
+                          if (event){
+                                if(res) {
+                                feedItemId = res;
+                                    if(res != -1) {
+                                         $j('#resultmsg').html('Signature Captured Successfully');
+                                         $j('#resultmsg').css({'text-align':'center','color' :'green','font-size' :'18px', 'font-weight' : 'bold'});
+                                    } else {
+                                        $j('#resultmsg').html(event.message);
+                                        $j('#resultmsg').css({'text-align':'center','color' :'red','font-size' :'18px', 'font-weight' : 'bold'});
+                                    }
+                                } else {
+                                    $j('#resultmsg').html(event.message);
+                                    $j('#resultmsg').css({'text-align':'center','color' :'red','font-size' :'18px', 'font-weight' : 'bold'});
+                                }
+                          }else{
+                             $j('#resultmsg').html('Error in capturing Signature');
+                             $j('#resultmsg').css({'text-align':'center','color' :'red','font-size' :'18px', 'font-weight' : 'bold'});
+                          }
+                        });
+                 }
+                 else if(!$j("#checkbox-mini-0").prop("checked")){
+                    $j.mobile.hidePageLoadingMsg();
+                    $j('#actionBtn').html('Please accept the terms and conditions and tap here');
+                 }   
+                 else{
+                    $j.mobile.hidePageLoadingMsg();
+                    $j('#actionBtn').html('Please sign and tap here');
+                 }                    
+            }
+        
+            function clearSignature(){
+                $j('#signature').jSignature('clear');
+                $j('#resultmsg').html('');
+                $j('#resultmsg').hide();
+                $j('#button').show();
+            }          
+        </script>
+    </head> 
+    
+    <body class="ui-mobile-viewport ui-overlay-c"> 
+        <div data-role="page" class="ui-page ui-body-c ui-page-active" id="currentPage">
+            <div data-role="content" id="contentId"> 
+                <div style="font-size:10px">{!$label.Disclaimer}</div>
+                <div id="signature" style="text-align:center;display:none;"></div>
+                
+                <input type="checkbox" name="checkbox-mini-0" id="checkbox-mini-0" data-mini="true" onclick="accepted();" >
+                    <label for="checkbox-mini-0">I have read this Agreement and agree to the terms and conditions.</label>
+                </input>
+                
+                <a id="button" data-theme="b" data-role="button" href="#" onclick="signatureAction();" >
+                <span id="actionBtn"></span>
+                </a>
+                
+                <div id="resultmsg" style="text-align:center;color:green;font-size:18px;font-weight:bold" data-theme="b"></div>
+                <a data-theme="b" data-role="button" href="#" data-ajax="false" onclick="clearSignature()">Clear Sign</a>
+            </div>
+            
+            <div data-role="footer" data-id="myFooter" data-position="fixed">
+                <div data-role="navbar">
+                    <ul>
+                        <li><a data-theme="b" href="#" onclick="navigateBack();showLoadingModal();"><img src="{!URLFOR($Resource.InstaSign, 'InstaSignImages/back-white.svg')}" width="40" height="40" /></a></li>
+                        <li><a data-theme="b" href="#" onclick="navigateToChatter();showLoadingModal()"><img src="{!URLFOR($Resource.InstaSign, 'InstaSignImages/home-white.svg')}" width="40" height="40"/></a></li>
+                        <li><a data-theme="b" href="#" data-ajax="false" onclick="clearSignature()"><img src="{!URLFOR($Resource.InstaSign, 'InstaSignImages/refresh-white.svg')}" width="40" height="40"/></a></li>              
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </body>
+    
+</html>        
+</apex:page>
